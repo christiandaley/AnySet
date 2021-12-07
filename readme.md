@@ -1,0 +1,1 @@
+This is a small, proof of concept implementation of an "AnySet" in C++. An "AnySet" is a set capable of holding an abritrary number of objects, with the condition that it can only hold at most one of any specific type of objects at a time. This is just a small project for practicing my C++ coding skills and experimenting with modules in C++ 20.
