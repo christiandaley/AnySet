@@ -14,7 +14,7 @@ namespace
 	}
 
 	template <typename T>
-	inline static size_t type_id ()
+	size_t type_id ()
 	{
 		static const auto id = get_id ();
 		return id;
@@ -149,7 +149,7 @@ export namespace utility
 	class type_not_found : public std::exception
 	{
 	public:
-		virtual const char* what () const override
+		virtual const char* what () const noexcept override
 		{
 			return "type not found";
 		}
@@ -284,6 +284,7 @@ export namespace utility
 	template <typename T>
 	inline any_impl* any_set::find () noexcept
 	{
+		static_assert (std::is_same_v<T, value_type<T>>);
 		if (auto it = m_map.find (type_id<T> ()); it != m_map.end ())
 		{
 			return &it->second;
