@@ -203,6 +203,8 @@ export namespace utility
 
 		template <typename T, typename U, typename... Args>
 		inline bool emplace (std::initializer_list<U> init_list, Args&&...);
+
+		inline size_t size () const noexcept;
 	private:
 		template <typename T>
 		inline any_impl* find () noexcept;
@@ -247,25 +249,36 @@ export namespace utility
 	template <typename T>
 	inline bool any_set::insert (T&& value)
 	{
-		auto data = any_impl::create<T> (std::forward<T> (value));
-		auto [it, inserted] = m_map.insert ({ type_id<T> (), std::move (data) });
+		using Vt = value_type<T>;
+
+		auto data = any_impl::create<Vt> (std::forward<T> (value));
+		auto [it, inserted] = m_map.insert ({ type_id<Vt> (), std::move (data) });
 		return inserted;
 	}
 
 	template <typename T, typename... Args>
 	inline bool any_set::emplace (Args&&... args)
 	{
-		auto data = any_impl::create<T> (std::forward<Args> (args)...);
-		auto [it, inserted] = m_map.insert ({ type_id<T> (), std::move (data) });
+		using Vt = value_type<T>;
+
+		auto data = any_impl::create<Vt> (std::forward<Args> (args)...);
+		auto [it, inserted] = m_map.insert ({ type_id<Vt> (), std::move (data) });
 		return inserted;
 	}
 
 	template <typename T, typename U, typename... Args>
 	inline bool any_set::emplace (std::initializer_list<U> init_list, Args&&... args)
 	{
-		auto data = any_impl::create<T> (std::move (init_list), std::forward<Args> (args)...);
-		auto [it, inserted] = m_map.insert ({ type_id<T> (), std::move (data) });
+		using Vt = value_type<T>;
+
+		auto data = any_impl::create<Vt> (std::move (init_list), std::forward<Args> (args)...);
+		auto [it, inserted] = m_map.insert ({ type_id<Vt> (), std::move (data) });
 		return inserted;
+	}
+
+	inline size_t any_set::size () const noexcept
+	{
+		return m_map.size ();
 	}
 
 	template <typename T>

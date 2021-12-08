@@ -38,6 +38,10 @@ int main()
     set.insert<int*> (nullptr);
     set.emplace<std::string> ("hello");
 
+    auto inner_set = any_set ();
+    inner_set.insert (11);
+    set.insert (std::move (inner_set));
+
     if (auto a = set.get<int> ())
     {
         std::cout << *a << '\n';
@@ -77,5 +81,10 @@ int main()
     if (auto g = set2.get<int*> ())
     {
         std::cout << *g << '\n';
+    }
+
+    if (auto h = set2.get<any_set> ())
+    {
+        std::cout << h->get_ref<int> () << '\n';
     }
 }
