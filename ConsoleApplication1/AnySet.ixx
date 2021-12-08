@@ -7,14 +7,14 @@ namespace
 {
 	// utility functions
 	
-	const size_t get_id ()
+	const size_t get_id () noexcept
 	{
 		static std::atomic<size_t> id = 0;
 		return id++;
 	}
-
+	 
 	template <typename T>
-	size_t type_id ()
+	size_t type_id () noexcept
 	{
 		static const auto id = get_id ();
 		return id;
@@ -29,11 +29,11 @@ namespace
 		{}
 
 		void* m_heap;
-		std::aligned_storage_t<sizeof (m_heap), std::alignment_of_v<decltype (m_heap)>> m_stack;
+		std::aligned_storage_t<sizeof (void*), alignof (void*)> m_stack;
 	};
 
 	template <typename T>
-	constexpr bool stack_allocate_v =
+	constexpr bool construct_in_place_v =
 		std::is_nothrow_move_constructible_v<T> &&
 		sizeof (T) <= sizeof (storage::m_stack) &&
 		alignof (T) <= alignof (decltype (storage::m_stack));
@@ -49,7 +49,7 @@ namespace
 	template <typename T>
 	void* manage (Op op, storage& storage1, storage* storage2)
 	{
-		if constexpr (stack_allocate_v<T>)
+		if constexpr (construct_in_place_v<T>)
 		{
 			switch (op)
 			{
@@ -99,7 +99,7 @@ namespace
 			any_impl data;
 			data.m_manage = &manage<T>;
 
-			if constexpr (stack_allocate_v<T>)
+			if constexpr (construct_in_place_v<T>)
 			{
 				new (&data.m_storage.m_stack) T (std::forward<Args> (args)...);
 			}
@@ -205,6 +205,13 @@ export namespace utility
 		inline bool emplace (std::initializer_list<U> init_list, Args&&...);
 
 		inline size_t size () const noexcept;
+
+		inline bool empty () const noexcept;
+
+		inline void clear () noexcept;
+
+		template <typename... Args>
+		inline size_t erase ();
 	private:
 		template <typename T>
 		inline any_impl* find () noexcept;
@@ -215,7 +222,7 @@ export namespace utility
 	template <typename T>
 	inline auto any_set::get () const noexcept -> const_pointer_type<T>
 	{
-		return const_cast<any_set*> (this)->get<value_type<T>> ();
+		return const_cast<any_set*> (this)->get<T> ();
 	}
 
 	template <typename T>
@@ -262,7 +269,7 @@ export namespace utility
 		using Vt = value_type<T>;
 
 		auto data = any_impl::create<Vt> (std::forward<Args> (args)...);
-		auto [it, inserted] = m_map.insert ({ type_id<Vt> (), std::move (data) });
+		auto [it, inserted] = m_map.emplace (type_id<Vt> (), std::move (data));
 		return inserted;
 	}
 
@@ -272,13 +279,29 @@ export namespace utility
 		using Vt = value_type<T>;
 
 		auto data = any_impl::create<Vt> (std::move (init_list), std::forward<Args> (args)...);
-		auto [it, inserted] = m_map.insert ({ type_id<Vt> (), std::move (data) });
+		auto [it, inserted] = m_map.emplace (type_id<Vt> (), std::move (data));
 		return inserted;
 	}
 
 	inline size_t any_set::size () const noexcept
 	{
 		return m_map.size ();
+	}
+
+	inline bool any_set::empty () const noexcept
+	{
+		return m_map.empty ();
+	}
+
+	inline void any_set::clear () noexcept
+	{
+		m_map.clear ();
+	}
+
+	template <typename... Args>
+	inline size_t any_set::erase ()
+	{
+		return (m_map.erase (type_id<value_type<Args>> ()) + ...);
 	}
 
 	template <typename T>

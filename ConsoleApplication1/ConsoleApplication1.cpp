@@ -31,12 +31,14 @@ int main()
     auto set = any_set ();
     set.insert (2);
     set.insert (5.5);
+    set.insert (5.5f);
     set.insert (true);
     set.emplace<test> (7, 2, 15);
     set.emplace<std::shared_ptr<int>> (std::make_shared<int> (9));
     set.emplace<std::vector<int>> ({ 0, 1, 2, 3, 4 });
     set.insert<int*> (nullptr);
     set.emplace<std::string> ("hello");
+    set.emplace<std::wstring> (L"world");
 
     auto inner_set = any_set ();
     inner_set.insert (11);
@@ -57,8 +59,12 @@ int main()
         std::cout << *c << '\n';
     }
 
-    auto set2 = any_set ();
-    set2 = std::move (set);
+    if (auto c2 = set.get<std::wstring> ())
+    {
+        std::wcout << *c2 << '\n';
+    }
+
+    const auto set2 = std::move (set);
 
     if (auto d = set2.get<test> ())
     {
